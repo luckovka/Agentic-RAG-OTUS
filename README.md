@@ -11,12 +11,59 @@ v3 — Telegram bot
 v4 — voice input/output
 v5 — image/VLM support
 
-Must-have к защите — базовый/advanced RAG, citations, Langfuse, Docker, README, demo. **MVP**
-Should-have — router, Python tool, reviewer, prompt-injection guard, evaluation.
-Nice-to-have — Telegram.
-После защиты — voice input/output, VLM, более серьёзные evals и нагрузочное тестирование
+**MVP**
+- загрузка PDF / TXT / MD;
+- извлечение текста и базовых metadata;
+- chunking;
+- embeddings;
+- Qdrant;
+- semantic top-K retrieval;
+- генерация ответа строго по найденному контексту;
+- ответ "не знаю", если информации в базе нет;
+- указание источника ответа
 
-**Архитектура базового проекта**
+Documents
+   ↓
+Parser
+   ↓
+Chunking + metadata
+   ↓
+Embeddings
+   ↓
+Qdrant
+   ↓
+Retriever
+   ↓
+Generator
+   ↓
+Answer + source
+
+## Must-have к защите 
+- advanced RAG;
+- citations;
+- Langfuse;
+- Docker / docker-compose;
+- README;
+- demo 3–5 минут;
+- запуск одной командой
+
+## Should-have 
+- router, 
+- Python tool, 
+- reviewer, 
+- prompt-injection guard, 
+- evaluation
+
+## Nice-to-have 
+
+- Telegram
+
+## The future
+- voice input/output, 
+- VLM, 
+- более серьёзные evals и нагрузочное тестирование
+
+**Целевая архитектура**
 
                  DATA / INGESTION
                        │
@@ -87,7 +134,7 @@ GitHub
 **Критерии готовности проекта**
 - запускается одной командой;
 - код разбит на модули;
-- секреты только в .env;
+- секреты локально в .env; .env добавлен в .gitignore; в репозитории лежит .env.example без реальных ключей.
 - есть Docker;
 - есть Langfuse traces и latency;
 - RAG отвечает по базе и умеет говорить «не знаю»;
