@@ -1,0 +1,95 @@
+📄 Базовые операции с DataFrame в pandas
+
+🔍 Просмотр данных
+df.head()         # первые 5 строк
+df.tail()         # последние 5 строк
+df.shape          # размер (строки, столбцы)
+df.columns        # названия колонок
+df.info()         # краткая информация
+df.describe()     # статистика по числовым колонкам
+
+🔧 Работа с колонками
+
+🏷 Переименование колонок
+df.rename(columns={'старое_имя': 'новое_имя'}, inplace=True)
+
+🗑 Удаление колонок
+df.drop(['col1', 'col2'], axis=1, inplace=True)
+
+➕ Добавление новой колонки
+df['new_col'] = df['col1'] + df['col2']
+
+🎯 Работа с данными
+
+🔄 Замена значений
+df['label'] = df['label'].map({'yes': 1, 'no': 0})
+df['label'] = df['label'].replace({'positive': 1, 'negative': 0})
+
+🧼 Заполнение пропусков
+df['age'] = df['age'].fillna(df['age'].median())    # числовое
+df['city'] = df['city'].fillna('unknown')           # категориальное
+
+❓ Поиск пропусков
+df.isnull().sum()               # количество NaN по колонкам
+df[df['col'].isnull()]          # строки с NaN в конкретной колонке
+
+🧮 Фильтрация данных
+
+📌 По условию
+df[df['age'] > 30]
+df[(df['age'] > 30) & (df['city'] == 'Moscow')]
+
+🧹 Удаление дубликатов
+df.drop_duplicates(inplace=True)
+
+🔢 Типы данных
+
+🔍 Проверка и преобразование типов
+df.dtypes
+df['age'] = df['age'].astype(int)
+
+📊 Группировка и агрегация
+
+df.groupby('gender')['age'].mean()
+df.groupby(['gender', 'city'])['income'].sum()
+
+💾 Сохранение / Загрузка данных
+
+df.to_csv('filename.csv', index=False)      # сохранить
+df = pd.read_csv('filename.csv')            # загрузить
+
+🧰 Частые трансформеры из sklearn
+
+📐 Масштабирование (StandardScaler)
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+🔤 Кодирование категориальных признаков
+
+# LabelEncoder (для 1D, например, target)
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+y_encoded = le.fit_transform(y)
+
+# OneHotEncoder (для признаков)
+from sklearn.preprocessing import OneHotEncoder
+
+ohe = OneHotEncoder(sparse=False)
+X_encoded = ohe.fit_transform(X[['category_col']])
+
+🧱 Pipeline (конвейер обработки)
+
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', RandomForestClassifier())
+])
+
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
