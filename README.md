@@ -1,4 +1,8 @@
 # Agentic-RAG-OTUS
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+
 Project for LLM_engineer_05_2026_course
 
 **Задача** 
