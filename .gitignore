@@ -222,3 +222,6 @@ data/private/
 
 *.pyc
 .DS_Store
+
+# Qdrant data
+qdrant_data/

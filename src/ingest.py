@@ -3,11 +3,25 @@ import pymupdf
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 from sentence_transformers import CrossEncoder
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
 
+# %%
+client = QdrantClient(path="qdrant_data")
+# %%
+collection_name = "ml_knowledge"
+
+# client.create_collection(
+#     collection_name=collection_name,
+#     vectors_config=VectorParams(
+#         size=384,
+#         distance=Distance.COSINE
+#     )
+# )
 # %%
 # ingestion & chunking
 
-pdf_path = "D:\LLM\RAG-project\Agentic-RAG-OTUS\data\sample\API и машинное обучение.pdf"
+pdf_path = "/Users/luckovka/ML/projects/Agentic-RAG-OTUS/data/sample/API и машинное обучение.pdf"
 
 doc = pymupdf.open(pdf_path)
 
@@ -73,7 +87,7 @@ for page_num, page in enumerate(doc):
 
 # %%
 
-model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
 # sample_text = all_chunks[0]["text"]
 
@@ -87,7 +101,7 @@ def normalize_query(query):
     replacements = {
         "overfitting": "переобучение",
         "underfitting": "недообучение",
-        "ML": "машинном обученим"
+        "ml": "машинное обучение"
     }
 
     normalized = query.lower()
@@ -106,8 +120,8 @@ print(normalized_query)
 
 #  %%
 query_embedding = model.encode(normalized_query)
-scores = cos_sim(query_embedding, embeddings)[0]
-best_idx = scores.argmax().item()
+# scores = cos_sim(query_embedding, embeddings)[0]
+# best_idx = scores.argmax().item()
 
 # %%
 
@@ -131,17 +145,51 @@ best_idx = scores.argmax().item()
 #         print("Score:", scores[i].item()
 # 
 # %%
-top_indices = scores.argsort(descending=True)[:5]
+# top_indices = scores.argsort(descending=True)[:5]
 
-for idx in top_indices:
-    idx = idx.item()
+# for idx in top_indices:
+#     idx = idx.item()
 
-    print("Score:", scores[idx].item())
-    print("Page:", all_chunks[idx]["page"])
-    print("Chunk:", all_chunks[idx]["chunk_number"])
-    # print(all_chunks[idx]["text"])
+#     print("Score:", scores[idx].item())
+#     print("Page:", all_chunks[idx]["page"])
+#     print("Chunk:", all_chunks[idx]["chunk_number"])
+#     # print(all_chunks[idx]["text"])
+#     print("----------------")
+# %%
+points = []
+
+for i, chunk in enumerate(all_chunks):
+    point = PointStruct(
+        id=i,
+        vector=embeddings[i].tolist(),
+        payload={
+            "source": chunk["source"],
+            "page": chunk["page"],
+            "chunk_number": chunk["chunk_number"],
+            "text": chunk["text"]
+        }
+    )
+
+    points.append(point)
+
+# %%
+client.upsert(
+    collection_name=collection_name,
+    points=points
+)
+# %%
+results = client.query_points(
+    collection_name=collection_name,
+    query=query_embedding.tolist(),
+    limit=5
+).points
+# %%
+for result in results:
+    print("Score:", result.score)
+    print("Page:", result.payload["page"])
+    print("Chunk:", result.payload["chunk_number"])
+    # print(result.payload["text"][:500])
     print("----------------")
-
 # %%
 
 reranker = CrossEncoder(
@@ -153,7 +201,7 @@ reranker = CrossEncoder(
 # %%
 pairs = []
 
-for idx in top_indices:
+for idx in results:
     idx = idx.item()
 
     pairs.append([
@@ -185,4 +233,4 @@ for idx, score in reranked:
     print("Chunk:", all_chunks[idx]["chunk_number"])
     # print(all_chunks[idx]["text"][:500])8
     print("----------------")
-# %%
+
