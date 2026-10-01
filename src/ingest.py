@@ -83,17 +83,38 @@ texts = [chunk["text"] for chunk in all_chunks]
 embeddings = model.encode(texts)
 
 # %%
-query = "Определение переобучения модели в машинном обучении"
-query_embedding = model.encode(query)
+def normalize_query(query):
+    replacements = {
+        "overfitting": "переобучение",
+        "underfitting": "недообучение",
+        "ML": "машинном обученим"
+    }
+
+    normalized = query.lower()
+
+    for term, replacement in replacements.items():
+        normalized = normalized.replace(term, replacement)
+
+    return normalized
+
+# %%
+original_query = "Что означает overfitting в ML?"
+
+normalized_query = normalize_query(original_query)
+
+print(normalized_query)
+
+#  %%
+query_embedding = model.encode(normalized_query)
 scores = cos_sim(query_embedding, embeddings)[0]
 best_idx = scores.argmax().item()
 
 # %%
 
-print("Score:", scores[best_idx].item())
-print("Page:", all_chunks[best_idx]["page"])
-print("Chunk:", all_chunks[best_idx]["chunk_number"])
-print(all_chunks[best_idx]["text"])
+# print("Score:", scores[best_idx].item())
+# print("Page:", all_chunks[best_idx]["page"])
+# print("Chunk:", all_chunks[best_idx]["chunk_number"])
+# print(all_chunks[best_idx]["text"])
   
     
 # %%
@@ -104,10 +125,11 @@ print(all_chunks[best_idx]["text"])
 #         print(chunk["text"])
 #         print("----------------")
 # %%
-for i, chunk in enumerate(all_chunks):
-    if "переобучение" in chunk["text"].lower():
-        print("Index:", i)
-        print("Score:", scores[i].item())
+# for i, chunk in enumerate(all_chunks):
+#     if "переобучение" in chunk["text"].lower():
+#         print("Index:", i)
+#         print("Score:", scores[i].item()
+# 
 # %%
 top_indices = scores.argsort(descending=True)[:5]
 
@@ -117,13 +139,17 @@ for idx in top_indices:
     print("Score:", scores[idx].item())
     print("Page:", all_chunks[idx]["page"])
     print("Chunk:", all_chunks[idx]["chunk_number"])
-    print(all_chunks[idx]["text"])
+    # print(all_chunks[idx]["text"])
     print("----------------")
+
 # %%
 
 reranker = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    "BAAI/bge-reranker-v2-m3"
 )
+# reranker = CrossEncoder(
+#     "cross-encoder/ms-marco-MiniLM-L-6-v2"
+# )
 # %%
 pairs = []
 
@@ -131,6 +157,32 @@ for idx in top_indices:
     idx = idx.item()
 
     pairs.append([
-        query,
+        normalized_query,
         all_chunks[idx]["text"]
     ])
+# %%
+# print(len(pairs))
+# print(pairs[0][0])
+# print(pairs[0][1][:300])
+
+# %%
+rerank_scores = reranker.predict(pairs)
+
+print(rerank_scores)
+
+# %%
+reranked = sorted(
+    zip(top_indices, rerank_scores),
+    key=lambda x: x[1],
+    reverse=True
+)
+# %%
+for idx, score in reranked:
+    idx = idx.item()
+
+    print("Rerank score:", score)
+    print("Page:", all_chunks[idx]["page"])
+    print("Chunk:", all_chunks[idx]["chunk_number"])
+    # print(all_chunks[idx]["text"][:500])8
+    print("----------------")
+# %%
