@@ -28,6 +28,7 @@ else:
 # ingestion & chunking
 
 pdf_path = "/Users/luckovka/ML/projects/Agentic-RAG-OTUS/data/sample/API и машинное обучение.pdf"
+# pdf_path = "D:\LLM\RAG-project\Agentic-RAG-OTUS\data\sample\API и машинное обучение.pdf"
 
 doc = pymupdf.open(pdf_path)
 
