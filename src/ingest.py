@@ -11,13 +11,13 @@ client = QdrantClient(path="qdrant_data")
 # %%
 collection_name = "ml_knowledge"
 
-# client.create_collection(
-#     collection_name=collection_name,
-#     vectors_config=VectorParams(
-#         size=384,
-#         distance=Distance.COSINE
-#     )
-# )
+client.create_collection(
+    collection_name=collection_name,
+    vectors_config=VectorParams(
+        size=384,
+        distance=Distance.COSINE
+    )
+)
 # %%
 # ingestion & chunking
 
@@ -97,29 +97,29 @@ texts = [chunk["text"] for chunk in all_chunks]
 embeddings = model.encode(texts)
 
 # %%
-def normalize_query(query):
-    replacements = {
-        "overfitting": "переобучение",
-        "underfitting": "недообучение",
-        "ml": "машинное обучение"
-    }
+# def normalize_query(query):
+#     replacements = {
+#         "overfitting": "переобучение",
+#         "underfitting": "недообучение",
+#         "ml": "машинное обучение"
+#     }
 
-    normalized = query.lower()
+#     normalized = query.lower()
 
-    for term, replacement in replacements.items():
-        normalized = normalized.replace(term, replacement)
+#     for term, replacement in replacements.items():
+#         normalized = normalized.replace(term, replacement)
 
-    return normalized
+#     return normalized
 
 # %%
-original_query = "Что означает overfitting в ML?"
+query = "Что такое переобучение?"
 
-normalized_query = normalize_query(original_query)
+# normalized_query = normalize_query(original_query)
 
-print(normalized_query)
+# print(normalized_query)
 
 #  %%
-query_embedding = model.encode(normalized_query)
+query_embedding = model.encode(query)
 # scores = cos_sim(query_embedding, embeddings)[0]
 # best_idx = scores.argmax().item()
 
@@ -199,15 +199,15 @@ reranker = CrossEncoder(
 #     "cross-encoder/ms-marco-MiniLM-L-6-v2"
 # )
 # %%
-pairs = []
+# pairs = []
 
-for idx in results:
-    idx = idx.item()
+# for idx in top_indices:
+#     idx = idx.item()
 
-    pairs.append([
-        normalized_query,
-        all_chunks[idx]["text"]
-    ])
+#     pairs.append([
+#         query,
+#         all_chunks[idx]["text"] 
+#     ])
 # %%
 # print(len(pairs))
 # print(pairs[0][0])
