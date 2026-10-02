@@ -8,16 +8,22 @@ from qdrant_client.models import Distance, VectorParams, PointStruct
 
 # %%
 client = QdrantClient(path="qdrant_data")
+
 # %%
 collection_name = "ml_knowledge"
 
-client.create_collection(
-    collection_name=collection_name,
-    vectors_config=VectorParams(
-        size=384,
-        distance=Distance.COSINE
+if not client.collection_exists(collection_name):
+    client.create_collection(
+        collection_name=collection_name,
+        vectors_config=VectorParams(
+            size=384,
+            distance=Distance.COSINE
+        )
     )
-)
+    print("Collection created")
+else:
+    print("Collection already exists")
+
 # %%
 # ingestion & chunking
 
@@ -209,9 +215,10 @@ reranker = CrossEncoder(
 #         all_chunks[idx]["text"] 
 #     ])
 # %%
-# print(len(pairs))
-# print(pairs[0][0])
-# print(pairs[0][1][:300])
+pairs = [
+    (query, result.payload["text"])
+    for result in results
+]
 
 # %%
 rerank_scores = reranker.predict(pairs)
@@ -219,18 +226,28 @@ rerank_scores = reranker.predict(pairs)
 print(rerank_scores)
 
 # %%
-reranked = sorted(
-    zip(top_indices, rerank_scores),
+reranked = list(zip(results, rerank_scores))
+
+for result, rerank_score in reranked:
+    print(result.score, rerank_score, result.payload["text"][:100])
+
+# %%
+reranked_sorted = sorted(
+    zip(results, rerank_scores),
     key=lambda x: x[1],
     reverse=True
 )
+
+    
 # %%
-for idx, score in reranked:
-    idx = idx.item()
+for result, score in reranked_sorted:
+    
 
     print("Rerank score:", score)
-    print("Page:", all_chunks[idx]["page"])
-    print("Chunk:", all_chunks[idx]["chunk_number"])
+    print("Page:", result.payload["page"])
+    print("Chunk:", result.payload["chunk_number"])
     # print(all_chunks[idx]["text"][:500])8
     print("----------------")
 
+
+# %%
