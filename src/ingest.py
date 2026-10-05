@@ -1,10 +1,35 @@
 # %%
 import pymupdf
+from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 from sentence_transformers import CrossEncoder
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
+
+# %%
+import sys
+print(sys.executable)
+print(sys.version)
+
+
+
+# %%
+from importlib.metadata import version
+
+packages = [
+    "sentence-transformers",
+    "qdrant-client",
+    "torch",
+    "transformers",
+    "langchain",
+]
+
+for package in packages:
+    try:
+        print(f"{package}: {version(package)}")
+    except Exception:
+        print(f"{package}: not installed")
 
 # %%
 client = QdrantClient(path="qdrant_data")
@@ -27,9 +52,14 @@ else:
 # %%
 # ingestion & chunking
 
-pdf_path = "/Users/luckovka/ML/projects/Agentic-RAG-OTUS/data/sample/API и машинное обучение.pdf"
-# pdf_path = "D:\LLM\RAG-project\Agentic-RAG-OTUS\data\sample\API и машинное обучение.pdf"
 
+pdf_path = Path("../data/sample/API и машинное обучение.pdf")
+# pdf_path = "/Users/luckovka/ML/projects/Agentic-RAG-OTUS/data/sample/API и машинное обучение.pdf"
+# pdf_path = "D:\LLM\RAG-project\Agentic-RAG-OTUS\data\sample\API и машинное обучение.pdf"
+print(pdf_path)
+print(pdf_path.exists())
+Path.cwd()
+# %%
 doc = pymupdf.open(pdf_path)
 
 pages = []
@@ -102,6 +132,9 @@ model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 
 texts = [chunk["text"] for chunk in all_chunks]
 embeddings = model.encode(texts)
+
+# %%
+print(model.get_sentence_embedding_dimension())
 
 # %%
 # def normalize_query(query):
