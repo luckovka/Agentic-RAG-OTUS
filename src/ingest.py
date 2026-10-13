@@ -1,38 +1,90 @@
 # %%
+from qdrant_client import QdrantClient
+client = QdrantClient(path="qdrant_data")
+
+# %%
 import pymupdf
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sentence_transformers.util import cos_sim
 from sentence_transformers import CrossEncoder
-from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
+import fitz
+from langchain_core.documents import Document
 
 # %%
-import sys
-print(sys.executable)
-print(sys.version)
+data_dir = Path("..") / "data"
 
-
-
-# %%
-from importlib.metadata import version
-
-packages = [
-    "sentence-transformers",
-    "qdrant-client",
-    "torch",
-    "transformers",
-    "langchain",
+files = [
+    path for path in data_dir.rglob("*")
+    if path.is_file()
+    and path.suffix.lower() in {".pdf", ".txt", ".md"}
 ]
 
-for package in packages:
-    try:
-        print(f"{package}: {version(package)}")
-    except Exception:
-        print(f"{package}: not installed")
+for path in files:
+    print(path)
+
+
 
 # %%
-client = QdrantClient(path="qdrant_data")
+
+
+def load_document(path):
+    loaded_documents = []
+
+    if path.suffix.lower() == ".pdf":
+        pdf = fitz.open(path)
+
+        for page_num, page in enumerate(pdf):
+            text = page.get_text()
+
+            if text.strip():
+                loaded_documents.append(
+                    Document(
+                        page_content=text,
+                        metadata={
+                            "source": path.name,
+                            "category": path.parent.name,
+                            "page": page_num + 1,
+                        }
+                    )
+                )
+
+        pdf.close()
+
+    elif path.suffix.lower() in {".txt", ".md"}:
+        text = path.read_text(encoding="utf-8")
+
+        if text.strip():
+            loaded_documents.append(
+                Document(
+                    page_content=text,
+                    metadata={
+                        "source": path.name,
+                        "category": path.parent.name,
+                    }
+                )
+            )
+
+    return loaded_documents
+
+
+# %%
+
+documents = []
+
+for path in files:
+    documents.extend(load_document(path))
+
+print("Files:", len(files))
+print("Documents:", len(documents))
+
+# %%
+
+
+
+# %%
+
 
 # %%
 collection_name = "ml_knowledge"
@@ -51,27 +103,6 @@ else:
 
 # %%
 # ingestion & chunking
-
-
-pdf_path = Path("../data/sample/API и машинное обучение.pdf")
-# pdf_path = "/Users/luckovka/ML/projects/Agentic-RAG-OTUS/data/sample/API и машинное обучение.pdf"
-# pdf_path = "D:\LLM\RAG-project\Agentic-RAG-OTUS\data\sample\API и машинное обучение.pdf"
-print(pdf_path)
-print(pdf_path.exists())
-Path.cwd()
-# %%
-doc = pymupdf.open(pdf_path)
-
-pages = []
-for page_num, page in enumerate(doc):
-    text = page.get_text()
-    page_data = {
-        "source": pdf_path,
-        "page": page_num + 1,
-        "text": text
-    }
-    pages.append(page_data)
-
 
 def clean_text(text):
     text = text.replace("\u200b", "")
@@ -108,15 +139,15 @@ def split_text(text, chunk_size=1000):
     return text_chunks
 
 all_chunks = []
-for page_num, page in enumerate(doc):
-    text = clean_text(page.get_text())
-    text = page.get_text()
+for document in documents:
+    text = clean_text(document.page_content)
     page_chunks = split_text(text)
 
     for chunk_num, chunk_text in enumerate(page_chunks):
         chunk_data = {
-            "source": pdf_path,
-            "page": page_num + 1,
+            "source": document.metadata['source'],
+            'category': document.metadata['category'],
+            "page": document.metadata.get("page"),
             "chunk_number": chunk_num + 1,
             "text": chunk_text
         }
@@ -133,68 +164,14 @@ model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 texts = [chunk["text"] for chunk in all_chunks]
 embeddings = model.encode(texts)
 
-# %%
-print(model.get_sentence_embedding_dimension())
 
 # %%
-# def normalize_query(query):
-#     replacements = {
-#         "overfitting": "переобучение",
-#         "underfitting": "недообучение",
-#         "ml": "машинное обучение"
-#     }
+query = "Как работает линейная регрессия?"
 
-#     normalized = query.lower()
-
-#     for term, replacement in replacements.items():
-#         normalized = normalized.replace(term, replacement)
-
-#     return normalized
-
-# %%
-query = "Что такое переобучение?"
-
-# normalized_query = normalize_query(original_query)
-
-# print(normalized_query)
 
 #  %%
 query_embedding = model.encode(query)
-# scores = cos_sim(query_embedding, embeddings)[0]
-# best_idx = scores.argmax().item()
 
-# %%
-
-# print("Score:", scores[best_idx].item())
-# print("Page:", all_chunks[best_idx]["page"])
-# print("Chunk:", all_chunks[best_idx]["chunk_number"])
-# print(all_chunks[best_idx]["text"])
-  
-    
-# %%
-# for i, chunk in enumerate(all_chunks):
-#     if "переобучение" in chunk["text"].lower():
-#         print("Index:", i)
-#         print("Page:", chunk["page"])
-#         print(chunk["text"])
-#         print("----------------")
-# %%
-# for i, chunk in enumerate(all_chunks):
-#     if "переобучение" in chunk["text"].lower():
-#         print("Index:", i)
-#         print("Score:", scores[i].item()
-# 
-# %%
-# top_indices = scores.argsort(descending=True)[:5]
-
-# for idx in top_indices:
-#     idx = idx.item()
-
-#     print("Score:", scores[idx].item())
-#     print("Page:", all_chunks[idx]["page"])
-#     print("Chunk:", all_chunks[idx]["chunk_number"])
-#     # print(all_chunks[idx]["text"])
-#     print("----------------")
 # %%
 points = []
 
@@ -213,6 +190,7 @@ for i, chunk in enumerate(all_chunks):
     points.append(point)
 
 # %%
+
 client.upsert(
     collection_name=collection_name,
     points=points
@@ -223,13 +201,16 @@ results = client.query_points(
     query=query_embedding.tolist(),
     limit=5
 ).points
+
 # %%
 for result in results:
     print("Score:", result.score)
     print("Page:", result.payload["page"])
     print("Chunk:", result.payload["chunk_number"])
-    # print(result.payload["text"][:500])
+    print("Source:", result.payload["source"])
+    print(result.payload["text"])
     print("----------------")
+
 # %%
 
 reranker = CrossEncoder(
@@ -238,16 +219,7 @@ reranker = CrossEncoder(
 # reranker = CrossEncoder(
 #     "cross-encoder/ms-marco-MiniLM-L-6-v2"
 # )
-# %%
-# pairs = []
 
-# for idx in top_indices:
-#     idx = idx.item()
-
-#     pairs.append([
-#         query,
-#         all_chunks[idx]["text"] 
-#     ])
 # %%
 pairs = [
     (query, result.payload["text"])
@@ -262,8 +234,8 @@ print(rerank_scores)
 # %%
 reranked = list(zip(results, rerank_scores))
 
-for result, rerank_score in reranked:
-    print(result.score, rerank_score, result.payload["text"][:100])
+# for result, rerank_score in reranked:
+#     print(result.score, rerank_score, result.payload["text"][:100])
 
 # %%
 reranked_sorted = sorted(
@@ -271,17 +243,56 @@ reranked_sorted = sorted(
     key=lambda x: x[1],
     reverse=True
 )
-
     
 # %%
-for result, score in reranked_sorted:
+# for result, score in reranked_sorted:
     
 
-    print("Rerank score:", score)
+#     print("Rerank score:", score)
+#     print("Page:", result.payload["page"])
+#     print("Chunk:", result.payload["chunk_number"])
+#     print(result.payload["text"][:500])
+#     print("----------------")
+
+for result, rerank_score in reranked_sorted:
+    
+    print("Qdrant score:", result.score)
+    print("Rerank score:", rerank_score)
     print("Page:", result.payload["page"])
     print("Chunk:", result.payload["chunk_number"])
-    # print(all_chunks[idx]["text"][:500])8
-    print("----------------")
+    print("Source:", result.payload["source"])
+    print("Text:", result.payload["text"])
+    print("---")
+# %%
+# build context
 
+def build_context(reranked_sorted, top_k=3):
+    context_parts = []
+
+    for i, (result, rerank_score) in enumerate(reranked_sorted[:top_k], start=1):
+        payload = result.payload
+
+        source = payload["source"]
+        page = payload.get("page")
+        text = payload["text"]
+
+        source_info = f"Источник {i}: {source}"
+
+        if page is not None:
+            source_info += f", страница {page}"
+
+        context_parts.append(
+            f"{source_info}\n"
+            f"Содержание:\n{text}"
+        )
+
+    return "\n\n---\n\n".join(context_parts)
+# %%
+context = build_context(reranked, top_k=3)
+
+print(context[:2000])
+print(type(context))
 
 # %%
+print(len(context))
+print(context[-500:])
