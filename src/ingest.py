@@ -335,7 +335,7 @@ system_prompt = """
 # print(response.message.content)
 
 # %%
-def answer_question(query: str) -> str:
+def answer_question(query: str) -> dict:
     query_embedding = model.encode(query)
 
     results = client.query_points(
@@ -356,6 +356,17 @@ def answer_question(query: str) -> str:
         key=lambda x: x[1],
         reverse=True
     )
+    
+    sources = []
+
+    for result, rerank_score in reranked_sorted[:3]:
+        sources.append({
+            "source": result.payload["source"],
+            "page": result.payload.get("page"),
+            "chunk_number": result.payload["chunk_number"],
+            "rerank_score": float(rerank_score)
+        })
+
 
     context = build_context(reranked_sorted, top_k=3)
 
@@ -374,16 +385,18 @@ def answer_question(query: str) -> str:
         options={"temperature": 0}
     )
 
-    return response.message.content
+    return {
+    "answer": response.message.content,
+    "sources": sources
+}
 
 # %%
-print(answer_question(
+result = answer_question(
     "Как вернуть файл к состоянию последнего коммита в Git?"
-))
+)
 
-print(answer_question(
-    "Какую роль играют белки RAG1 и RAG2 в процессе V(D)J-рекомбинации?"
-))
+print(result["answer"])
+print(result["sources"])
 
 # %%
 
