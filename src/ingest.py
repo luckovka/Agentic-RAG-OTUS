@@ -11,6 +11,8 @@ from sentence_transformers import CrossEncoder
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import fitz
 from langchain_core.documents import Document
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
 
 # %%
 data_dir = Path("..") / "data"
@@ -391,14 +393,6 @@ def answer_question(query: str) -> dict:
 }
 
 # %%
-result = answer_question(
-    "Как вернуть файл к состоянию последнего коммита в Git?"
-)
-
-print(result["answer"])
-print(result["sources"])
-
-# %%
 def route_query(query: str) -> str:
     query_lower = query.strip().lower()
 
@@ -432,11 +426,52 @@ def handle_query(query: str) -> dict:
     raise ValueError(f"Неизвестный маршрут: {route}")
 
 # %%
+# building the graph
 
-result = handle_query(
-    "Как вернуть файл к состоянию последнего коммита в Git?"
-)
-
-print(result["answer"])
-print(result["sources"])
+class RAGState(TypedDict):
+    query: str
+    route: str
+    answer: str
+    sources: list[dict]
 # %%
+
+def router_node(state: RAGState) -> dict:
+    route = route_query(state["query"])
+    return {"route": route}
+
+def route_function(state: RAGState) -> str:
+    return state["route"]
+
+def rag_search_node(state: RAGState) -> dict:
+    result = answer_question(state["query"])
+    return {
+        'answer': result['answer'],
+        'sources': result['sources']
+        }
+
+def python_tool_func(query: str) -> dict:
+    return {
+        "answer": "Заглушка: вычисление пока не реализовано",
+        "sources": []
+    }
+
+def python_tool_node(state: RAGState) -> dict:
+    code_result = python_tool_func(state["query"])
+    return {
+        "answer": code_result['answer'],
+        "sources": code_result['sources']
+        }
+
+def direct_answer_func(query: str) -> dict:
+    return {
+        "answer": "Заглушка: прямой ответ LLM пока не реализован",
+        "sources": []
+    }
+
+def direct_answer_node(state: RAGState) -> dict:
+    answer_result = direct_answer_func(state["query"])
+    return {
+        "answer": answer_result['answer'],
+        "sources": answer_result['sources']
+        }
+
