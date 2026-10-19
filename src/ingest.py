@@ -399,6 +399,44 @@ print(result["answer"])
 print(result["sources"])
 
 # %%
+def route_query(query: str) -> str:
+    query_lower = query.strip().lower()
 
+    if "посчитай" in query_lower:
+        return "python_tool"
 
+    if query_lower.startswith("привет"):
+        return "direct"
+
+    return "rag_search"
+
+# %%
+def handle_query(query: str) -> dict:
+    route = route_query(query)
+
+    if route == "rag_search":
+        return answer_question(query)
+
+    if route == "python_tool":
+        return {
+            "answer": "Python Tool пока не подключён.",
+            "sources": []
+        }
+
+    if route == "direct":
+        return {
+            "answer": "Привет! Я ассистент по машинному обучению.",
+            "sources": []
+        }
+
+    raise ValueError(f"Неизвестный маршрут: {route}")
+
+# %%
+
+result = handle_query(
+    "Как вернуть файл к состоянию последнего коммита в Git?"
+)
+
+print(result["answer"])
+print(result["sources"])
 # %%
