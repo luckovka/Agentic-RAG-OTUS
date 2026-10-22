@@ -343,13 +343,22 @@ def answer_question(query: str) -> dict:
     results = client.query_points(
         collection_name=collection_name,
         query=query_embedding.tolist(),
-        limit=5
+        limit=20
     ).points
 
     pairs = [
         (query, result.payload["text"])
         for result in results
     ]
+
+    # for rank, point in enumerate(results, start=1):
+    #     payload = point.payload or {}
+    #     print(
+    #         f"{rank}. "
+    #         f"{payload.get('source')} | "
+    #         f"chunk={payload.get('chunk_number')} | "
+    #         f"score={point.score:.4f}"
+    #     )
 
     rerank_scores = reranker.predict(pairs)
 
@@ -400,30 +409,30 @@ def route_query(query: str) -> str:
         return "python_tool"
 
     if query_lower.startswith("привет"):
-        return "direct"
+        return "direct_answer"
 
     return "rag_search"
 
 # %%
-def handle_query(query: str) -> dict:
-    route = route_query(query)
+# def handle_query(query: str) -> dict:
+#     route = route_query(query)
 
-    if route == "rag_search":
-        return answer_question(query)
+#     if route == "rag_search":
+#         return answer_question(query)
 
-    if route == "python_tool":
-        return {
-            "answer": "Python Tool пока не подключён.",
-            "sources": []
-        }
+#     if route == "python_tool":
+#         return {
+#             "answer": "Python Tool пока не подключён.",
+#             "sources": []
+#         }
 
-    if route == "direct":
-        return {
-            "answer": "Привет! Я ассистент по машинному обучению.",
-            "sources": []
-        }
+#     if route == "direct_answer":
+#         return {
+#             "answer": "Привет! Я ассистент по машинному обучению.",
+#             "sources": []
+#         }
 
-    raise ValueError(f"Неизвестный маршрут: {route}")
+#     raise ValueError(f"Неизвестный маршрут: {route}")
 
 # %%
 # building the graph
@@ -475,3 +484,105 @@ def direct_answer_node(state: RAGState) -> dict:
         "sources": answer_result['sources']
         }
 
+# %%
+builder = StateGraph(RAGState)
+
+builder.add_node('router', router_node)
+builder.add_node('rag_search', rag_search_node)
+builder.add_node('python_tool', python_tool_node)
+builder.add_node('direct_answer', direct_answer_node)
+
+builder.add_edge(START, "router")
+
+builder.add_conditional_edges(
+    "router",
+    route_function,
+    {
+        "rag_search": "rag_search",
+        "python_tool": "python_tool",
+        "direct_answer": "direct_answer"
+    }
+)
+
+builder.add_edge("rag_search", END)
+builder.add_edge("python_tool", END)
+builder.add_edge("direct_answer", END)
+
+rag_graph = builder.compile()
+
+# %%
+rag_result = rag_graph.invoke({'query': "Как откатить файл к состоянию последнего коммита?"})
+print(rag_result)
+
+
+# # %%
+# rag_result = rag_graph.invoke({'query': "Посчитай 2+2"})
+# print(rag_result)
+
+# # %%
+# rag_result = rag_graph.invoke({'query': "Привет! Как дела?"})
+# print(rag_result)
+# # %%
+# from IPython.display import Image, display
+
+# display(Image(rag_graph.get_graph().draw_mermaid_png()))
+# %%
+# query = "Как откатить файл к состоянию последнего коммита?"
+# query = "Как вернуть файл к состоянию последнего коммита в Git?"
+
+# for event in rag_graph.stream(
+#     {"query": query},
+#     stream_mode="updates"
+# ):
+#     print(event)
+# %%
+# for event in rag_graph.stream(
+#     {"query": "Привет!"},
+#     stream_mode="values"
+# ):
+#     print(event)
+# %%
+query = "Как откатить файл к состоянию последнего коммита?"
+
+query_embedding = model.encode(query)
+
+results_20 = client.query_points(
+    collection_name=collection_name,
+    query=query_embedding.tolist(),
+    limit=20
+).points
+
+for rank, point in enumerate(results_20, start=1):
+    if (
+        point.payload["source"] == "git_cheatsheet.md"
+        and point.payload["chunk_number"] == 4
+    ):
+        print(
+            f"Нужный чанк: место {rank}, "
+            f"score={point.score:.4f}"
+        )
+        break
+else:
+    print("Нужного чанка нет даже в top-20")
+# %%
+pairs_20 = [
+    (query, result.payload["text"])
+    for result in results_20
+]
+
+scores_20 = reranker.predict(pairs_20)
+
+reranked_20 = sorted(
+    zip(results_20, scores_20),
+    key=lambda x: x[1],
+    reverse=True
+)
+
+for rank, (result, score) in enumerate(reranked_20[:5], start=1):
+    print(
+        rank,
+        result.payload["source"],
+        result.payload["chunk_number"],
+        round(float(score), 4)
+    )
+# %%
