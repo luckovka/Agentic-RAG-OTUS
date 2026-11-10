@@ -1,0 +1,10 @@
+
+.git/
+.venv/
+.venv-test/
+.vscode/
+__pycache__/
+*.pyc
+*.ipynb
+**/qdrant_data/
+data/
