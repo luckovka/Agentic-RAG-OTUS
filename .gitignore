@@ -224,8 +224,9 @@ data/private/
 .DS_Store
 
 # Qdrant data
-src/qdrant_data/
-qdrant_data/
+/src/qdrant_data/
+/qdrant_data/
+/qdrant_data_old/
 
 .venv-test/
 
