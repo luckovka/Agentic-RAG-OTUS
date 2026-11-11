@@ -225,6 +225,7 @@ data/private/
 
 # Qdrant data
 src/qdrant_data/
+qdrant_data/
 
 .venv-test/
 
