@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SRC_DIR = Path(__file__).resolve().parent
 
 data_dir = PROJECT_ROOT / "data"
-QDRANT_PATH = SRC_DIR / "qdrant_data"
+QDRANT_PATH = PROJECT_ROOT / "qdrant_data"
 
 e5_model = SentenceTransformer("intfloat/multilingual-e5-small")
 e5_collection = "rag_e5_small"

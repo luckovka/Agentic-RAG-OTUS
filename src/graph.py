@@ -1,6 +1,5 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
-from .retrieval import retrieve_and_rerank
 from .functions import route_query, answer_question_e5, direct_answer_func, python_tool_func, build_context
 
 class RAGState(TypedDict):

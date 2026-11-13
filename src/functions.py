@@ -1,4 +1,5 @@
-from ollama import chat
+# from ollama import chat
+from .llm import generate_answer
 import re
 from .retrieval import retrieve_and_rerank
 
@@ -65,8 +66,8 @@ def answer_question_e5(query: str) -> dict:
     
     context = build_context(reranked_e5, top_k=3)
 
-    response = chat(
-        model="llama3.1",
+
+    answer = generate_answer(
         messages=[
             {
                 "role": "system",
@@ -77,17 +78,18 @@ def answer_question_e5(query: str) -> dict:
                 "content": f"Контекст:\n{context}\n\nВопрос:\n{query}"
             }
         ],
-        options={"temperature": 0}
+        temperature=0
     )
 
     return {
-    "answer": response.message.content,
-    "sources": sources
+        "answer": answer,
+        "sources": sources
     }
 
+
 def direct_answer_func(query: str) -> dict:
-    response = chat(
-        model="llama3.1",
+
+    answer = generate_answer(
         messages=[
             {
                 "role": "system",
@@ -98,13 +100,14 @@ def direct_answer_func(query: str) -> dict:
                 "content": query
             }
         ],
-        options={"temperature": 0}
+     temperature=0
     )
 
     return {
-        "answer": response["message"]["content"],
+        "answer": answer,
         "sources": []
     }
+
 
 def calculate_metrics(tp: int, fp: int, fn: int) -> dict:
     precision = tp / (tp + fp) if tp + fp else 0.0

@@ -229,4 +229,4 @@ data/private/
 /qdrant_data_old/
 
 .venv-test/
-
+.env

@@ -1,7 +1,5 @@
 from functools import lru_cache
 from sentence_transformers import SentenceTransformer, CrossEncoder
-from qdrant_client.models import Distance, VectorParams, PointStruct
-from sentence_transformers.util import cos_sim
 from .database import get_client
 from .config import e5_model, reranker, e5_collection 
 

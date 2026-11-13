@@ -1,5 +1,24 @@
+from dotenv import load_dotenv
 from .database import get_client
 from .graph import rag_e5_graph
+from langfuse import get_client as get_langfuse_client
+from langfuse.langchain import CallbackHandler
+
+load_dotenv()
+langfuse_handler = CallbackHandler()
+
+def run_query(query: str) -> dict:
+    result = rag_e5_graph.invoke(
+        {"query": query},
+        config={
+            "callbacks": [langfuse_handler],
+            "run_name": "Agentic-RAG-OTUS"
+        }
+    )
+
+    get_langfuse_client().flush()
+
+    return result
 
 def main():
     tests = [
@@ -10,17 +29,16 @@ def main():
 
     try:
         for query in tests:
-            result = rag_e5_graph.invoke({"query": query})
+            result = run_query(query)
 
             print("Маршрут:", result["route"])
             print("Ответ:", result["answer"])
             print("Источники:", result["sources"])
-
+    
     finally:
-        # Закрываем клиент только после окончания всех запросов
         get_client().close()
         get_client.cache_clear()
-
+    
 
 if __name__ == "__main__":
     main()
