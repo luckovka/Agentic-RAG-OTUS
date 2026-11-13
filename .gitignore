@@ -227,6 +227,7 @@ data/private/
 /src/qdrant_data/
 /qdrant_data/
 /qdrant_data_old/
+/qdrant_data_backup/
 
 .venv-test/
 .env
