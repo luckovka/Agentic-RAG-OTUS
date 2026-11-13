@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from sentence_transformers import CrossEncoder

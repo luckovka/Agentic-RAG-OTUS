@@ -158,5 +158,8 @@ def ingest_documents():
         points=e5_points
     )
 
+count = client.count(collection_name=e5_collection, exact=True)
+print(f"Points in Qdrant: {count.count}")
+
 if __name__ == "__main__":
     ingest_documents()

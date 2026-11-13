@@ -2,6 +2,7 @@
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
+python -m streamlit run src/ui.py
 
 Project for LLM_engineer_05_2026_course
 
