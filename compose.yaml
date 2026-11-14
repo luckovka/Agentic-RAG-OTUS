@@ -1,0 +1,13 @@
+services:
+  cthulhu:
+    image: cthulhu:latest
+    build: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - cthulhu_data:/app/qdrant_data
+
+volumes:
+  cthulhu_data:

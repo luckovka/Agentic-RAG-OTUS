@@ -1,4 +1,3 @@
-
 .git/
 .venv/
 .venv-test/
@@ -7,5 +6,5 @@ __pycache__/
 *.pyc
 *.ipynb
 **/qdrant_data/
-data/
+**/qdrant_data_backup/
 .env
