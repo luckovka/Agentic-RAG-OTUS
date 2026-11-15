@@ -231,3 +231,4 @@ data/private/
 
 .venv-test/
 .env
+.venv*/
