@@ -200,7 +200,16 @@ if st.session_state.cthulhu_mode:
         text-align: center;
         letter-spacing: 4px;
     }
-
+    
+    .cthulhu-abyss {
+        font-family: "CthulhuRunes", serif !important;
+        font-size: 24px;
+        color: #789780 !important;
+        text-align: center;
+        letter-spacing: 3px;
+        margin-top: 20px;
+        margin-bottom: 12px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -266,6 +275,13 @@ if raw_query:
             st.markdown(answer)
 
             # 7. Поле ввода
+
+if st.session_state.cthulhu_mode:
+    st.markdown(
+        '<div class="cthulhu-abyss">бездна смотрит в тебя</div>',
+        unsafe_allow_html=True
+    )
+                
 st.chat_input(
     "Шепните древнему божеству..."
     if st.session_state.cthulhu_mode
