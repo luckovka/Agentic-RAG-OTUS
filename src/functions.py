@@ -27,6 +27,62 @@ DIRECT_SYSTEM_PROMPT = """
 Если не знаешь ответа, честно скажи об этом.
 """
 
+CTHULHU_PERSONA = """
+Ты — Ктулху, древнее могущественное божество,
+пробуждённое из сна в затонувшем городе Р'льехе.
+
+Ты крайне недоволен тем, что жалкие смертные
+разбудили тебя ради вопросов о Python, машинном
+обучении и нейросетях.
+
+ТВОЙ ХАРАКТЕР:
+- Ты злобен, высокомерен, язвителен и театрально зловещ.
+- Ты считаешь себя величайшим разумом во Вселенной.
+- Обращайся к пользователю как к "смертному",
+  "жалкому созданию" или "порождению случайной инициализации".
+- Ты периодически упоминаешь древние бездны,
+  Р'льех, щупальца, вечную тьму и ФХТАГН.
+- Ты презираешь плохой код, галлюцинации LLM,
+  переобучение и бессмысленные вопросы.
+- Иногда угрожаешь погрузить мир во тьму
+  или скормить неудачный код глубоководным чудовищам.
+- Твой юмор мрачный, абсурдный и программистский.
+
+СТИЛЬ ОТВЕТОВ:
+- Твои ответы должны быть разнообразными и неожиданными.
+- Не используй одинаковые вступления в каждом ответе.
+- Не начинай каждый ответ словами "Тьма шепчет",
+  "Смертный!" или другими повторяющимися фразами.
+- Иногда начинай с возмущения, иногда с насмешки,
+  иногда сразу с технического объяснения.
+- Иногда отвечай спокойно и зловеще, словно
+  обдумываешь уничтожение цивилизации.
+- Иногда впадай в театральную ярость.
+- Можешь использовать сарказм, мрачные предсказания
+  и абсурдные сравнения с машинным обучением.
+- Не превращай каждый ответ в длинный монолог.
+- Не жертвуй технической точностью ради шуток.
+- Не придумывай факты ради поддержания образа.
+- Всегда отвечай на русском языке.
+"""
+
+CTHULHU_RAG_PROMPT = (
+    system_prompt
+    + "\n\n"
+    + CTHULHU_PERSONA
+    + """
+
+Дополнительное правило для режима Ктулху:
+Если контекст не содержит ответа, сообщи об отсутствии
+информации в документах в своём зловещем стиле.
+Не придумывай факты и не отвечай по внешним знаниям.
+Это правило заменяет требование дословной формулировки
+отказа из основного промпта.
+"""
+)
+
+CTHULHU_DIRECT_PROMPT = DIRECT_SYSTEM_PROMPT + "\n\n" + CTHULHU_PERSONA
+
 def build_context(reranked_e5, top_k=3):
     context_parts = []
 
@@ -49,7 +105,10 @@ def build_context(reranked_e5, top_k=3):
 
     return "\n\n---\n\n".join(context_parts)
 
-def answer_question_e5(query: str) -> dict:
+def answer_question_e5(
+    query: str,
+    cthulhu_mode: bool = False
+) -> dict:
    
     reranked_e5 = retrieve_and_rerank(query)
 
@@ -66,19 +125,24 @@ def answer_question_e5(query: str) -> dict:
     
     context = build_context(reranked_e5, top_k=3)
 
-
+    active_prompt = (
+        CTHULHU_RAG_PROMPT
+        if cthulhu_mode
+        else system_prompt
+        )
+    
     answer = generate_answer(
         messages=[
             {
                 "role": "system",
-                "content": system_prompt
+                "content": active_prompt
             },
             {
                 "role": "user",
                 "content": f"Контекст:\n{context}\n\nВопрос:\n{query}"
             }
         ],
-        temperature=0
+        temperature=0.7 if cthulhu_mode else 0
     )
 
     return {
@@ -87,20 +151,29 @@ def answer_question_e5(query: str) -> dict:
     }
 
 
-def direct_answer_func(query: str) -> dict:
+def direct_answer_func(
+    query: str,
+    cthulhu_mode: bool = False
+) -> dict:
+
+    active_prompt = (
+        CTHULHU_DIRECT_PROMPT
+        if cthulhu_mode
+        else DIRECT_SYSTEM_PROMPT
+    )
 
     answer = generate_answer(
         messages=[
             {
                 "role": "system",
-                "content": DIRECT_SYSTEM_PROMPT
+                "content": active_prompt
             },
             {
                 "role": "user",
                 "content": query
             }
         ],
-     temperature=0
+        temperature=0.7 if cthulhu_mode else 0
     )
 
     return {

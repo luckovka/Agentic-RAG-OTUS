@@ -7,9 +7,15 @@ from langfuse.langchain import CallbackHandler
 load_dotenv()
 langfuse_handler = CallbackHandler()
 
-def run_query(query: str) -> dict:
+def run_query(
+    query: str,
+    cthulhu_mode: bool = False
+    ) -> dict:
     result = rag_e5_graph.invoke(
-        {"query": query},
+        {
+        "query": query,
+         "cthulhu_mode": cthulhu_mode
+         },
         config={
             "callbacks": [langfuse_handler],
             "run_name": "Agentic-RAG-OTUS"

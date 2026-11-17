@@ -7,7 +7,7 @@ class RAGState(TypedDict):
     route: str
     answer: str
     sources: list[dict]
-
+    cthulhu_mode: bool
 
 def router_node(state: RAGState) -> dict:
     route = route_query(state["query"])
@@ -17,11 +17,15 @@ def route_function(state: RAGState) -> str:
     return state["route"]
 
 def rag_search_node(state: RAGState) -> dict:
-    result = answer_question_e5(state["query"])
+    result = answer_question_e5(
+        state["query"],
+        cthulhu_mode=state.get("cthulhu_mode", False)
+    )
+
     return {
-        'answer': result['answer'],
-        'sources': result['sources']
-        }
+        "answer": result["answer"],
+        "sources": result["sources"]
+    }
 
 def python_tool_node(state: RAGState) -> dict:
     code_result = python_tool_func(state["query"])
@@ -31,40 +35,44 @@ def python_tool_node(state: RAGState) -> dict:
         }
 
 def direct_answer_node(state: RAGState) -> dict:
-    answer_result = direct_answer_func(state["query"])
+    answer_result = direct_answer_func(
+        state["query"],
+        cthulhu_mode=state.get("cthulhu_mode", False)
+    )
+
     return {
-        "answer": answer_result['answer'],
-        "sources": answer_result['sources']
-        }
+        "answer": answer_result["answer"],
+        "sources": answer_result["sources"]
+    }
     
     
-def router_node(state: RAGState) -> dict:
-    route = route_query(state["query"])
-    return {"route": route}
+# def router_node(state: RAGState) -> dict:
+#     route = route_query(state["query"])
+#     return {"route": route}
 
-def route_function(state: RAGState) -> str:
-    return state["route"]
+# def route_function(state: RAGState) -> str:
+#     return state["route"]
 
-def rag_search_node(state: RAGState) -> dict:
-    result = answer_question_e5(state["query"])
-    return {
-        'answer': result['answer'],
-        'sources': result['sources']
-        }
+# def rag_search_node(state: RAGState) -> dict:
+#     result = answer_question_e5(state["query"])
+#     return {
+#         'answer': result['answer'],
+#         'sources': result['sources']
+#         }
 
-def python_tool_node(state: RAGState) -> dict:
-    code_result = python_tool_func(state["query"])
-    return {
-        "answer": code_result['answer'],
-        "sources": code_result['sources']
-        }
+# def python_tool_node(state: RAGState) -> dict:
+#     code_result = python_tool_func(state["query"])
+#     return {
+#         "answer": code_result['answer'],
+#         "sources": code_result['sources']
+#         }
 
-def direct_answer_node(state: RAGState) -> dict:
-    answer_result = direct_answer_func(state["query"])
-    return {
-        "answer": answer_result['answer'],
-        "sources": answer_result['sources']
-        }
+# def direct_answer_node(state: RAGState) -> dict:
+#     answer_result = direct_answer_func(state["query"])
+#     return {
+#         "answer": answer_result['answer'],
+#         "sources": answer_result['sources']
+#         }
 
 builder = StateGraph(RAGState)
 
