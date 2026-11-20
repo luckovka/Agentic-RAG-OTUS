@@ -18,7 +18,7 @@ def run_query(
          },
         config={
             "callbacks": [langfuse_handler],
-            "run_name": "Agentic-RAG-OTUS"
+            "run_name": "Advanced-RAG-OTUS"
         }
     )
 
