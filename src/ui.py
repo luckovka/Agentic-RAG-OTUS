@@ -4,7 +4,7 @@ import re
 from src.app import run_query
 
 st.set_page_config(
-    page_title="Agentic RAG",
+    page_title="Advanced RAG",
     page_icon="🐙"
 )
 
@@ -223,10 +223,17 @@ if st.session_state.cthulhu_mode:
     )
     st.caption("Р'льехский справочник запретных знаний")
 else:
-    st.title("🐙 Agentic RAG")
+    st.title("🐙 Advanced RAG")
     st.caption("Справочник ML-инженера")
 
-
+# Отображение истории сообщений
+for message in st.session_state.messages:
+    with st.chat_message(
+        message["role"],
+        avatar="🐙" if message["role"] == "assistant" else None
+    ):
+        st.markdown(message["content"])
+        
 # 6. Обработка ожидающего запроса
 
 raw_query = st.session_state.pop("pending_raw_query", None)
