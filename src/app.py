@@ -12,7 +12,7 @@ def run_query(query: str) -> dict:
         {"query": query},
         config={
             "callbacks": [langfuse_handler],
-            "run_name": "Agentic-RAG-OTUS"
+            "run_name": "Advanced-RAG-OTUS"
         }
     )
 

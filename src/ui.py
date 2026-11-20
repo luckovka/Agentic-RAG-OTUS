@@ -2,11 +2,11 @@ import streamlit as st
 from src.app import run_query
 
 st.set_page_config(
-    page_title="Agentic RAG",
+    page_title="Advanced RAG",
     page_icon="🐙"
 )
 
-st.title("🐙 Agentic RAG")
+st.title("🐙 Advanced RAG")
 st.caption("Справочник ML-инженера")
 
 if "messages" not in st.session_state:
